@@ -61,15 +61,15 @@ export default function App() {
         {/* Header */}
         <header className="relative z-10 flex justify-between items-center px-6 md:px-16 py-6 w-full">
           <div className="flex items-center">
-            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Logo" className="h-10 md:h-12 object-contain" />
+            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Biergarten Haag an der Amper Logo" className="h-10 md:h-12 object-contain" width="200" height="48" fetchPriority="high" decoding="async" />
           </div>
-          <nav className="hidden lg:flex items-center gap-10 text-white/90 text-sm font-medium tracking-wide">
+          <nav className="hidden lg:flex items-center gap-10 text-white/90 text-sm font-medium tracking-wide" aria-label="Hauptnavigation">
             <a href="#home" className="hover:text-gold transition-colors">Startseite</a>
             <a href="#events" className="hover:text-gold transition-colors">Events</a>
             <a href="#about" className="hover:text-gold transition-colors">Über uns</a>
           </nav>
           <div>
-            <a href="https://www.google.com/maps?gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCTQwMzZqMGoxNagCCLACAQ&um=1&ie=UTF-8&fb=1&gl=de&sa=X&geocode=KYGRAhuxP55HMemnYLXbt-yr&daddr=Freisinger+Str.+1,+85410+Haag+an+der+Amper" target="_blank" rel="noopener noreferrer" className="bg-black/40 hover:bg-black/60 backdrop-blur-md text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 border border-white/10">
+            <a href="https://www.google.com/maps?gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCTQwMzZqMGoxNagCCLACAQ&um=1&ie=UTF-8&fb=1&gl=de&sa=X&geocode=KYGRAhuxP55HMemnYLXbt-yr&daddr=Freisinger+Str.+1,+85410+Haag+an+der+Amper" target="_blank" rel="noopener noreferrer" className="bg-black/40 hover:bg-black/60 backdrop-blur-md text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 border border-white/10" aria-label="Route zum Biergarten auf Google Maps öffnen">
               Anfahrt
             </a>
           </div>
@@ -105,9 +105,9 @@ export default function App() {
           </div>
 
           <div className="flex md:flex-col gap-5 text-white/80">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors"><Instagram size={20} /></a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors"><Twitter size={20} /></a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors"><Youtube size={20} /></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors" aria-label="Besuche uns auf Instagram"><Instagram size={20} /></a>
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors" aria-label="Besuche uns auf Twitter"><Twitter size={20} /></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors" aria-label="Besuche uns auf YouTube"><Youtube size={20} /></a>
           </div>
         </div>
       </section>
@@ -185,31 +185,35 @@ export default function App() {
       <div className="w-full h-64 md:h-[400px] relative">
         <img 
           src="https://s1.directupload.eu/images/260402/rwfl2ewv.webp" 
-          alt="Bavarian Mountains" 
+          alt="Atmosphärisches Bild des Biergartens Schlossallee in Haag an der Amper" 
           className="w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forest/50 to-forest"></div>
       </div>
 
       {/* Dark Mode Section */}
       <section id="about" className="bg-forest text-white py-24 px-6 md:px-16 relative overflow-hidden">
+        <h2 className="sr-only">Unsere Philosophie und Angebote</h2>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
           
           {/* Left: Vertical Menu */}
           <div className="lg:col-span-5 flex flex-col justify-center">
-            <nav className="flex flex-col w-full">
+            <nav className="flex flex-col w-full" aria-label="Kategorien">
               {categories.map((item, idx) => (
-                <div 
+                <button 
                   key={idx} 
                   onClick={() => {
                     setActiveCategory(idx);
                     setActiveTab('uebersicht');
                   }}
-                  className={`group cursor-pointer py-4 md:py-6 border-b border-white/10 last:border-0 flex items-baseline gap-4 md:gap-6 transition-all ${activeCategory === idx ? 'opacity-100' : 'opacity-50 hover:opacity-80'}`}
+                  className={`group cursor-pointer py-4 md:py-6 border-b border-white/10 last:border-0 flex items-baseline gap-4 md:gap-6 transition-all text-left w-full ${activeCategory === idx ? 'opacity-100' : 'opacity-50 hover:opacity-80'}`}
+                  aria-expanded={activeCategory === idx}
                 >
                   <span className={`text-sm font-medium transition-colors ${activeCategory === idx ? 'text-gold' : 'text-white/50 group-hover:text-gold'}`}>{item.num}.</span>
                   <span className={`text-3xl sm:text-4xl md:text-5xl font-bold transition-colors tracking-tight ${activeCategory === idx ? 'text-white' : 'text-white/50 group-hover:text-white'}`}>{item.title}</span>
-                </div>
+                </button>
               ))}
             </nav>
           </div>
@@ -243,7 +247,7 @@ export default function App() {
                   <div className="animate-fade-in grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
                     {galleryImages.map((img, i) => (
                       <div key={i} className="aspect-square rounded-lg overflow-hidden bg-white/5">
-                        <img src={img} alt={`Galerie Bild ${i+1}`} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
+                        <img src={img} alt={`Impressionen aus dem Biergarten Schlossallee - Bild ${i+1}`} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" loading="lazy" decoding="async" />
                       </div>
                     ))}
                   </div>
@@ -264,8 +268,10 @@ export default function App() {
                   <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shrink-0 bg-forest/50 flex items-center justify-center p-2">
                     <img 
                       src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" 
-                      alt="Schlossallee Logo" 
+                      alt="Schlossallee Biergarten Haag an der Amper Logo" 
                       className="w-full h-full object-contain"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 </div>
@@ -281,15 +287,15 @@ export default function App() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
-            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Logo" className="h-12 object-contain mb-6" />
+            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Biergarten Haag an der Amper Logo" className="h-12 object-contain mb-6" loading="lazy" decoding="async" />
             <p className="text-sm leading-relaxed mb-6">
               Der schönste Biergarten in Haag an der Amper. Tradition, Natur und echte bayrische Gemütlichkeit.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-gold hover:text-forest transition-colors">
+              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-gold hover:text-forest transition-colors" aria-label="Besuche uns auf Instagram">
                 <Instagram size={18} />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-gold hover:text-forest transition-colors">
+              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-gold hover:text-forest transition-colors" aria-label="Besuche uns auf Facebook">
                 <Facebook size={18} />
               </a>
             </div>
