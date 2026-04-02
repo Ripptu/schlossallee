@@ -48,7 +48,7 @@ export default function App() {
   return (
     <div className="font-sans text-forest antialiased bg-offwhite selection:bg-gold selection:text-forest">
       {/* Hero Section */}
-      <section id="home" className="relative min-h-screen w-full flex flex-col overflow-hidden">
+      <section id="home" className="relative min-h-[100svh] w-full flex flex-col overflow-hidden">
         {/* Background Image */}
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
@@ -76,7 +76,7 @@ export default function App() {
         </header>
 
         {/* Main Hero Content */}
-        <main className="relative z-10 flex-grow flex flex-col justify-center px-6 md:px-16 pt-10 pb-32">
+        <main className="relative z-10 flex-grow flex flex-col justify-center px-6 md:px-16 pt-4 pb-8 md:pt-10 md:pb-32">
           <div className="max-w-7xl mx-auto w-full">
             {/* Date Badge */}
             <div className="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/10 text-white/90 px-4 py-2 rounded-md text-sm mb-6 md:mb-8">
@@ -95,7 +95,7 @@ export default function App() {
         </main>
 
         {/* Bottom Footer Area of Hero */}
-        <div className="relative z-10 px-6 md:px-16 pb-8 md:pb-12 w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mt-auto">
+        <div className="relative z-10 px-6 md:px-16 pb-8 md:pb-12 w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-8 mt-auto">
           <div className="max-w-xs text-white/90 text-sm leading-relaxed border-l-2 border-gold pl-4">
             Schön, dass du da bist! Willkommen an unserem Lieblingsplatz. Freu dich auf ein kühles Bier, eine gscheite Brotzeit und ganz viel Natur.
           </div>
