@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Map, ArrowRight, Instagram, Twitter, Youtube, Globe, ArrowUpRight, MapPin, Phone, Mail, Facebook, Sun, CloudRain, ChevronDown, Check, X } from 'lucide-react';
+import { Calendar, Map, ArrowRight, Instagram, Twitter, Youtube, Globe, ArrowUpRight, MapPin, Phone, Mail, Facebook, Sun, CloudRain, ChevronDown, Check, X, Clock } from 'lucide-react';
 import { db } from './firebase';
 import { doc, onSnapshot, setDoc, getDocFromServer } from 'firebase/firestore';
 
@@ -50,6 +50,51 @@ export default function App() {
   // Weather State
   const [weatherTemp, setWeatherTemp] = useState<number | null>(null);
   const [weatherCode, setWeatherCode] = useState<number>(0);
+  
+  // Auto-Close State
+  const [isWithinOpeningHours, setIsWithinOpeningHours] = useState(false);
+
+  useEffect(() => {
+    const checkIsOpenHours = () => {
+      const now = new Date();
+      const berlinTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+      
+      const month = berlinTime.getMonth() + 1;
+      const date = berlinTime.getDate();
+      const day = berlinTime.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+      const hour = berlinTime.getHours();
+      
+      // Season: 01.05 to 03.10
+      const isSeason = (month > 5 && month < 10) || 
+                       (month === 5 && date >= 1) || 
+                       (month === 10 && date <= 3);
+                       
+      if (!isSeason) return false;
+      
+      // Monday: Ruhetag
+      if (day === 1) return false;
+      
+      // Tue - Fri: 15:00 - 23:00
+      if (day >= 2 && day <= 5) {
+        return hour >= 15 && hour < 23;
+      }
+      
+      // Sat - Sun: 11:00 - 23:00
+      if (day === 0 || day === 6) {
+        return hour >= 11 && hour < 23;
+      }
+      
+      return false;
+    };
+
+    setIsWithinOpeningHours(checkIsOpenHours());
+    
+    const interval = setInterval(() => {
+      setIsWithinOpeningHours(checkIsOpenHours());
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Test connection
@@ -223,6 +268,8 @@ export default function App() {
     "https://images.unsplash.com/photo-1590005354167-6da97ce231ce?auto=format&fit=crop&q=80&w=500"
   ];
 
+  const effectivelyOpen = isOpen && isWithinOpeningHours;
+
   return (
     <div className="font-sans text-forest antialiased bg-offwhite selection:bg-gold selection:text-forest">
       {/* Sticky Navigation */}
@@ -247,12 +294,11 @@ export default function App() {
 
       {/* Hero Section */}
       <section id="home" className="relative min-h-[100svh] w-full flex flex-col overflow-hidden">
-        {/* Background Image with Parallax */}
+        {/* Background Image */}
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: "url('https://s1.directupload.eu/images/260402/rwfl2ewv.webp')",
-            transform: `translateY(${scrollY * 0.4}px)`
+            backgroundImage: "url('https://s1.directupload.eu/images/260402/rwfl2ewv.webp')"
           }}
         >
           {/* Gradient Overlay for readability */}
@@ -263,8 +309,8 @@ export default function App() {
         <main className="relative z-10 flex-grow flex flex-col justify-center px-6 md:px-16 pt-24 pb-8 md:pt-32 md:pb-32">
           <div className="max-w-7xl mx-auto w-full">
             {/* Weather / Status Badge */}
-            <div className={`inline-flex items-center gap-2 backdrop-blur-md border px-4 py-2 rounded-full text-sm mb-6 md:mb-8 shadow-lg transition-colors ${isOpen ? 'bg-green-900/40 border-green-400/30 text-green-50' : 'bg-red-900/40 border-red-400/30 text-red-50'}`}>
-              {isOpen ? (
+            <div className={`inline-flex items-center gap-2 backdrop-blur-md border px-4 py-2 rounded-full text-sm mb-6 md:mb-8 shadow-lg transition-colors ${effectivelyOpen ? 'bg-green-900/40 border-green-400/30 text-green-50' : 'bg-red-900/40 border-red-400/30 text-red-50'}`}>
+              {effectivelyOpen ? (
                 <>
                   {weatherCode <= 3 ? <Sun size={18} className="text-yellow-400" /> : <CloudRain size={18} className="text-blue-300" />}
                   <span className="font-medium tracking-wide">
@@ -273,8 +319,10 @@ export default function App() {
                 </>
               ) : (
                 <>
-                  <CloudRain size={18} className="text-blue-300" />
-                  <span className="font-medium tracking-wide">Heute leider witterungsbedingt geschlossen.</span>
+                  {weatherCode > 3 ? <CloudRain size={18} className="text-blue-300" /> : <Clock size={18} className="text-red-300" />}
+                  <span className="font-medium tracking-wide">
+                    {!isWithinOpeningHours ? 'Aktuell außerhalb der Öffnungszeiten geschlossen.' : 'Heute leider witterungsbedingt geschlossen.'}
+                  </span>
                 </>
               )}
             </div>

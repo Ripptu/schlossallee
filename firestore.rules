@@ -32,9 +32,9 @@ service cloud.firestore {
       // Allow public update ONLY for the status document, and ONLY if the payload is exactly a boolean 'isOpen'
       // This is a prototype approach to allow the frontend password to work without Firebase Auth.
       // In a production app, this should be protected by isAuthenticated() and isAdmin() checks.
-      allow update: if settingId == 'status' && isValidSettingsUpdate();
+      allow create, update: if settingId == 'status' && isValidSettingsUpdate();
       
-      allow create, delete: if false;
+      allow delete: if false;
     }
   }
 }
