@@ -1,9 +1,126 @@
-import React, { useState } from 'react';
-import { Calendar, Map, ArrowRight, Instagram, Twitter, Youtube, Globe, ArrowUpRight, MapPin, Phone, Mail, Facebook } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Map, ArrowRight, Instagram, Twitter, Youtube, Globe, ArrowUpRight, MapPin, Phone, Mail, Facebook, Sun, CloudRain, ChevronDown, Check, X } from 'lucide-react';
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [activeTab, setActiveTab] = useState('uebersicht');
+  
+  // New State Variables
+  const [scrollY, setScrollY] = useState(0);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [showCookieBanner, setShowCookieBanner] = useState(true);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  
+  // Secret Status Toggle
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(true);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+  
+  // Weather State
+  const [weatherTemp, setWeatherTemp] = useState<number | null>(null);
+  const [weatherCode, setWeatherCode] = useState<number>(0);
+
+  useEffect(() => {
+    // Fetch real weather for Haag an der Amper
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=48.458&longitude=11.828&current_weather=true')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.current_weather) {
+          setWeatherTemp(Math.round(data.current_weather.temperature));
+          setWeatherCode(data.current_weather.weathercode);
+        }
+      })
+      .catch(err => console.error("Weather fetch error:", err));
+  }, []);
+
+  useEffect(() => {
+    // Check local storage for cookie consent
+    const consent = localStorage.getItem('cookieConsent');
+    if (consent) {
+      setShowCookieBanner(false);
+    }
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+      
+      // Sticky Nav Logic: Show when scrolling up or at the very top
+      if (currentScrollY < 50) {
+        setIsNavVisible(true);
+      } else if (currentScrollY > lastScrollY) {
+        setIsNavVisible(false); // Scrolling down
+      } else {
+        setIsNavVisible(true); // Scrolling up
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  const handleLogoClick = () => {
+    setLogoClickCount(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    if (logoClickCount >= 5) {
+      setShowPasswordModal(true);
+      setLogoClickCount(0);
+    }
+    
+    // Reset click count after 3 seconds of inactivity
+    if (logoClickCount > 0 && logoClickCount < 5) {
+      const timer = setTimeout(() => setLogoClickCount(0), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [logoClickCount]);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === 'vamela') {
+      setIsOpen(prev => !prev);
+      setShowPasswordModal(false);
+      setPasswordInput('');
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordInput('');
+    setPasswordError(false);
+  };
+
+  const acceptCookies = () => {
+    localStorage.setItem('cookieConsent', 'true');
+    setShowCookieBanner(false);
+  };
+
+  const faqs = [
+    {
+      question: "Darf ich meine eigene Brotzeit mitbringen?",
+      answer: "Ja, absolut! Wie es sich für einen echten bayrischen Traditions-Biergarten gehört, dürft ihr eure eigene Brotzeit gerne mitbringen. Die Getränke kauft ihr einfach bei uns an der Schänke."
+    },
+    {
+      question: "Gibt es ausreichend Parkplätze?",
+      answer: "Wir haben einen großen, kostenlosen Parkplatz direkt am Biergarten. Auch für Fahrräder gibt es jede Menge Stellplätze im Schatten."
+    },
+    {
+      question: "Ist Kartenzahlung möglich?",
+      answer: "Ja, ihr könnt bei uns an allen Kassen bequem mit EC-Karte, Kreditkarte oder Apple/Google Pay bezahlen. Bargeld nehmen wir natürlich auch gerne."
+    },
+    {
+      question: "Sind Hunde im Biergarten erlaubt?",
+      answer: "Hunde sind bei uns herzlich willkommen! Bitte führt eure Vierbeiner an der Leine und nehmt Rücksicht auf andere Gäste. Wassernäpfe stehen an der Schänke bereit."
+    }
+  ];
 
   const categories = [
     {
@@ -47,41 +164,58 @@ export default function App() {
 
   return (
     <div className="font-sans text-forest antialiased bg-offwhite selection:bg-gold selection:text-forest">
-      {/* Hero Section */}
-      <section id="home" className="relative min-h-[100svh] w-full flex flex-col overflow-hidden">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('https://s1.directupload.eu/images/260402/rwfl2ewv.webp')" }}
-        >
-          {/* Gradient Overlay for readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/80"></div>
-        </div>
-
-        {/* Header */}
-        <header className="relative z-10 flex justify-between items-center px-6 md:px-16 py-6 w-full">
-          <div className="flex items-center">
-            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Biergarten Haag an der Amper Logo" className="h-10 md:h-12 object-contain" width="200" height="48" fetchPriority="high" decoding="async" />
+      {/* Sticky Navigation */}
+      <div className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <header className={`flex justify-between items-center pl-2 pr-6 md:pl-6 md:pr-16 py-4 w-full transition-all duration-300 ${scrollY > 50 ? 'bg-[#15241A]/90 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
+          <div className="flex items-center cursor-pointer" onClick={handleLogoClick}>
+            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Biergarten Haag an der Amper Logo" className="h-8 md:h-10 object-contain" width="200" height="48" fetchPriority="high" decoding="async" />
           </div>
           <nav className="hidden lg:flex items-center gap-10 text-white/90 text-sm font-medium tracking-wide" aria-label="Hauptnavigation">
             <a href="#home" className="hover:text-gold transition-colors">Startseite</a>
             <a href="#events" className="hover:text-gold transition-colors">Events</a>
             <a href="#about" className="hover:text-gold transition-colors">Über uns</a>
+            <a href="#faq" className="hover:text-gold transition-colors">FAQ</a>
           </nav>
           <div>
-            <a href="https://www.google.com/maps?gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCTQwMzZqMGoxNagCCLACAQ&um=1&ie=UTF-8&fb=1&gl=de&sa=X&geocode=KYGRAhuxP55HMemnYLXbt-yr&daddr=Freisinger+Str.+1,+85410+Haag+an+der+Amper" target="_blank" rel="noopener noreferrer" className="bg-black/40 hover:bg-black/60 backdrop-blur-md text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 border border-white/10" aria-label="Route zum Biergarten auf Google Maps öffnen">
+            <a href="https://www.google.com/maps?gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCTQwMzZqMGoxNagCCLACAQ&um=1&ie=UTF-8&fb=1&gl=de&sa=X&geocode=KYGRAhuxP55HMemnYLXbt-yr&daddr=Freisinger+Str.+1,+85410+Haag+an+der+Amper" target="_blank" rel="noopener noreferrer" className="bg-gold/90 hover:bg-gold text-forest px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-md" aria-label="Route zum Biergarten auf Google Maps öffnen">
               Anfahrt
             </a>
           </div>
         </header>
+      </div>
+
+      {/* Hero Section */}
+      <section id="home" className="relative min-h-[100svh] w-full flex flex-col overflow-hidden">
+        {/* Background Image with Parallax */}
+        <div 
+          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: "url('https://s1.directupload.eu/images/260402/rwfl2ewv.webp')",
+            transform: `translateY(${scrollY * 0.4}px)`
+          }}
+        >
+          {/* Gradient Overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80"></div>
+        </div>
 
         {/* Main Hero Content */}
-        <main className="relative z-10 flex-grow flex flex-col justify-center px-6 md:px-16 pt-4 pb-8 md:pt-10 md:pb-32">
+        <main className="relative z-10 flex-grow flex flex-col justify-center px-6 md:px-16 pt-24 pb-8 md:pt-32 md:pb-32">
           <div className="max-w-7xl mx-auto w-full">
-            {/* Date Badge */}
-            <div className="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/10 text-white/90 px-4 py-2 rounded-md text-sm mb-6 md:mb-8">
-              <Calendar size={16} className="text-gold" />
-              <span className="font-medium tracking-wide">Endlich wieder da: 01. Mai - 03. Oktober</span>
+            {/* Weather / Status Badge */}
+            <div className={`inline-flex items-center gap-2 backdrop-blur-md border px-4 py-2 rounded-full text-sm mb-6 md:mb-8 shadow-lg transition-colors ${isOpen ? 'bg-green-900/40 border-green-400/30 text-green-50' : 'bg-red-900/40 border-red-400/30 text-red-50'}`}>
+              {isOpen ? (
+                <>
+                  {weatherCode <= 3 ? <Sun size={18} className="text-yellow-400" /> : <CloudRain size={18} className="text-blue-300" />}
+                  <span className="font-medium tracking-wide">
+                    {weatherTemp !== null ? `${weatherTemp}°C` : '...'} – Heute bei schönem Wetter geöffnet!
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CloudRain size={18} className="text-blue-300" />
+                  <span className="font-medium tracking-wide">Heute leider witterungsbedingt geschlossen.</span>
+                </>
+              )}
             </div>
 
             {/* Headline Area */}
@@ -128,11 +262,14 @@ export default function App() {
             <div className="bg-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] rounded-2xl p-8 md:p-12 border border-gray-100">
               <div className="space-y-8">
                 {/* Event 1 */}
-                <div className="group border-b border-gray-100 pb-8 last:border-0 last:pb-0">
+                <div className="group border-b border-gray-100 pb-8 last:border-0 last:pb-0 cursor-pointer">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <p className="text-sm text-gray-400 font-medium mb-2 uppercase tracking-wider">15. August 2026</p>
-                      <h3 className="text-2xl md:text-3xl font-medium text-forest group-hover:text-gold transition-colors">Unser Lampion-Fest</h3>
+                      <h3 className="text-2xl md:text-3xl font-medium text-forest group-hover:text-gold transition-colors flex items-center gap-3">
+                        Unser Lampion-Fest
+                        <ArrowRight size={24} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-gold" />
+                      </h3>
                     </div>
                     <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium text-forest hover:text-gold transition-colors whitespace-nowrap">
                       Zum Kalender <ArrowUpRight size={16} />
@@ -141,11 +278,14 @@ export default function App() {
                 </div>
 
                 {/* Event 2 */}
-                <div className="group border-b border-gray-100 pb-8 last:border-0 last:pb-0">
+                <div className="group border-b border-gray-100 pb-8 last:border-0 last:pb-0 cursor-pointer">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <p className="text-sm text-gray-400 font-medium mb-2 uppercase tracking-wider">22. Mai 2026</p>
-                      <h3 className="text-2xl md:text-3xl font-medium text-forest group-hover:text-gold transition-colors">Live-Musik: Austro-Pop</h3>
+                      <h3 className="text-2xl md:text-3xl font-medium text-forest group-hover:text-gold transition-colors flex items-center gap-3">
+                        Live-Musik: Austro-Pop
+                        <ArrowRight size={24} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-gold" />
+                      </h3>
                     </div>
                     <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium text-forest hover:text-gold transition-colors whitespace-nowrap">
                       Zum Kalender <ArrowUpRight size={16} />
@@ -154,11 +294,14 @@ export default function App() {
                 </div>
 
                 {/* Event 3 */}
-                <div className="group border-b border-gray-100 pb-8 last:border-0 last:pb-0">
+                <div className="group border-b border-gray-100 pb-8 last:border-0 last:pb-0 cursor-pointer">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <p className="text-sm text-gray-400 font-medium mb-2 uppercase tracking-wider">05. Juni 2026</p>
-                      <h3 className="text-2xl md:text-3xl font-medium text-forest group-hover:text-gold transition-colors">Oldtimer-Motorradtreffen</h3>
+                      <h3 className="text-2xl md:text-3xl font-medium text-forest group-hover:text-gold transition-colors flex items-center gap-3">
+                        Oldtimer-Motorradtreffen
+                        <ArrowRight size={24} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-gold" />
+                      </h3>
                     </div>
                     <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium text-forest hover:text-gold transition-colors whitespace-nowrap">
                       Zum Kalender <ArrowUpRight size={16} />
@@ -181,15 +324,20 @@ export default function App() {
         </div>
       </section>
 
-      {/* Transition Image */}
-      <div className="w-full h-64 md:h-[400px] relative">
-        <img 
-          src="https://s1.directupload.eu/images/260402/rwfl2ewv.webp" 
-          alt="Atmosphärisches Bild des Biergartens Schlossallee in Haag an der Amper" 
-          className="w-full h-full object-cover"
-          loading="lazy"
-          decoding="async"
-        />
+      {/* Transition Image with Parallax */}
+      <div className="w-full h-64 md:h-[400px] relative overflow-hidden">
+        <div 
+          className="absolute inset-0 w-full h-[130%] -top-[15%]"
+          style={{ transform: `translateY(${scrollY * 0.15}px)` }}
+        >
+          <img 
+            src="https://s1.directupload.eu/images/260402/rwfl2ewv.webp" 
+            alt="Atmosphärisches Bild des Biergartens Schlossallee in Haag an der Amper" 
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forest/50 to-forest"></div>
       </div>
 
@@ -282,6 +430,42 @@ export default function App() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section id="faq" className="py-24 px-6 md:px-16 max-w-4xl mx-auto bg-offwhite">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl text-forest font-bold mb-4">Gut zu wissen</h2>
+          <p className="text-forest/70">Die wichtigsten Fragen rund um euren Besuch bei uns.</p>
+        </div>
+        
+        <div className="space-y-4">
+          {faqs.map((faq, index) => (
+            <div 
+              key={index} 
+              className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+            >
+              <button 
+                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                aria-expanded={openFaqIndex === index}
+              >
+                <span className="text-lg font-medium text-forest pr-4">{faq.question}</span>
+                <ChevronDown 
+                  size={20} 
+                  className={`text-gold shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`} 
+                />
+              </button>
+              <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${openFaqIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+              >
+                <div className="p-6 pt-0 text-forest/70 leading-relaxed border-t border-gray-50">
+                  {faq.answer}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-[#15241A] text-white/70 py-16 px-6 md:px-16 border-t border-white/10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
@@ -358,6 +542,74 @@ export default function App() {
           <p>Gestaltet mit ❤️ in Bayern</p>
         </div>
       </footer>
+
+      {/* Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#15241A] border border-gold/30 rounded-2xl p-6 md:p-8 shadow-2xl w-full max-w-md relative">
+            <button 
+              onClick={closePasswordModal}
+              className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+            <h3 className="text-2xl font-medium text-white mb-2">Status ändern</h3>
+            <p className="text-white/70 text-sm mb-6">Bitte gib das Passwort ein, um den Öffnungs-Status zu ändern.</p>
+            
+            <form onSubmit={handlePasswordSubmit}>
+              <input 
+                type="password" 
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordError(false);
+                }}
+                placeholder="Passwort"
+                className={`w-full bg-white/5 border ${passwordError ? 'border-red-500' : 'border-white/20'} rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-gold transition-colors mb-4`}
+                autoFocus
+              />
+              {passwordError && <p className="text-red-400 text-sm mb-4">Falsches Passwort.</p>}
+              <button 
+                type="submit"
+                className="w-full bg-gold hover:bg-gold/90 text-forest font-medium py-3 rounded-lg transition-colors"
+              >
+                Bestätigen
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Cookie Banner */}
+      {showCookieBanner && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 md:p-6 animate-fade-in">
+          <div className="max-w-4xl mx-auto bg-[#15241A] border border-gold/30 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-white/80 text-sm leading-relaxed">
+              <p className="font-medium text-white mb-1">Wir verwenden Cookies 🍪</p>
+              <p>
+                Um unsere Webseite für dich optimal zu gestalten und fortlaufend verbessern zu können, verwenden wir Cookies. 
+                Weitere Informationen erhältst du in unserer <a href="#" className="text-gold hover:underline">Datenschutzerklärung</a>.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+              <button 
+                onClick={acceptCookies}
+                className="flex-1 md:flex-none bg-gold hover:bg-gold/90 text-forest px-6 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Check size={16} />
+                Akzeptieren
+              </button>
+              <button 
+                onClick={() => setShowCookieBanner(false)}
+                className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Cookie Banner schließen"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
