@@ -1,5 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Map, ArrowRight, Instagram, Twitter, Youtube, Globe, ArrowUpRight, MapPin, Phone, Mail, Facebook, Sun, CloudRain, ChevronDown, Check, X } from 'lucide-react';
+import { db } from './firebase';
+import { doc, onSnapshot, setDoc, getDocFromServer } from 'firebase/firestore';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: any;
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: null,
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+}
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState(0);
@@ -22,6 +50,34 @@ export default function App() {
   // Weather State
   const [weatherTemp, setWeatherTemp] = useState<number | null>(null);
   const [weatherCode, setWeatherCode] = useState<number>(0);
+
+  useEffect(() => {
+    // Test connection
+    async function testConnection() {
+      try {
+        await getDocFromServer(doc(db, 'settings', 'status'));
+      } catch (error) {
+        if(error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
+        }
+      }
+    }
+    testConnection();
+
+    // Listen to global status
+    const unsub = onSnapshot(doc(db, 'settings', 'status'), (docSnap) => {
+      if (docSnap.exists()) {
+        setIsOpen(docSnap.data().isOpen);
+      } else {
+        // Initialize if it doesn't exist
+        setDoc(doc(db, 'settings', 'status'), { isOpen: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'settings/status'));
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'settings/status');
+    });
+
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     // Fetch real weather for Haag an der Amper
@@ -80,13 +136,18 @@ export default function App() {
     }
   }, [logoClickCount]);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordInput === 'vamela') {
-      setIsOpen(prev => !prev);
-      setShowPasswordModal(false);
-      setPasswordInput('');
-      setPasswordError(false);
+      try {
+        await setDoc(doc(db, 'settings', 'status'), { isOpen: !isOpen });
+        setShowPasswordModal(false);
+        setPasswordInput('');
+        setPasswordError(false);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'settings/status');
+        alert('Fehler beim Ändern des Status.');
+      }
     } else {
       setPasswordError(true);
     }
@@ -166,9 +227,9 @@ export default function App() {
     <div className="font-sans text-forest antialiased bg-offwhite selection:bg-gold selection:text-forest">
       {/* Sticky Navigation */}
       <div className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-        <header className={`flex justify-between items-center pl-2 pr-6 md:pl-6 md:pr-16 py-4 w-full transition-all duration-300 ${scrollY > 50 ? 'bg-[#15241A]/90 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
+        <header className={`flex justify-between items-center px-6 md:px-16 py-4 w-full transition-all duration-300 ${scrollY > 50 ? 'bg-[#15241A]/90 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
           <div className="flex items-center cursor-pointer" onClick={handleLogoClick}>
-            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Biergarten Haag an der Amper Logo" className="h-8 md:h-10 object-contain" width="200" height="48" fetchPriority="high" decoding="async" />
+            <img src="https://s1.directupload.eu/images/260402/om4bp4q3.webp" alt="Schlossallee Biergarten Haag an der Amper Logo" className="h-8 md:h-10 object-contain object-left" width="200" height="48" fetchPriority="high" decoding="async" />
           </div>
           <nav className="hidden lg:flex items-center gap-10 text-white/90 text-sm font-medium tracking-wide" aria-label="Hauptnavigation">
             <a href="#home" className="hover:text-gold transition-colors">Startseite</a>
